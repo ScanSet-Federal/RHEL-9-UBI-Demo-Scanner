@@ -1,0 +1,13 @@
+{
+	"name": "RHEL9 UBI Scanner",
+	"build": {
+		"context": "/",
+		"dockerfile": "Dockerfile"
+	},
+	"runArgs": [
+		"--network=host"
+	],
+	
+	"workspaceFolder": "/workspace",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+}

@@ -1,0 +1,30 @@
+META
+    ics_scan_id `selinux_status_test`
+    control_framework `RHEL_9_STIG`
+    control `SV-257780r925324_rule`
+    platform `RHEL_9`
+    criticality `high`
+    tags `selinux, mandatory_access_control, security`
+META_END
+
+DEF
+VAR enforcing_mode string `Enforcing`
+
+OBJECT selinux_system
+    check_type `enforcement`
+    type `selinux`
+OBJECT_END
+
+STATE enforcing_required
+    mode string = VAR enforcing_mode
+    enforcing boolean = true
+STATE_END
+
+CRI AND
+    CTN selinux_status
+        TEST all all
+        STATE_REF enforcing_required
+        OBJECT_REF selinux_system
+    CTN_END
+CRI_END
+DEF_END

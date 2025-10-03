@@ -1,0 +1,52 @@
+META
+    ics_scan_id `rpm_package_comprehensive_test`
+    control_framework `RHEL_9_STIG`
+    control `SV-257777r925318_rule`
+    platform `RHEL_9`
+    criticality `high`
+    tags `packages, security, baseline`
+META_END
+
+DEF
+VAR openssl_package string `openssl`
+VAR sudo_package string `sudo`
+VAR fake_package string `nonexistent-test-package`
+
+OBJECT openssl_pkg
+    package_name VAR openssl_package
+    type `rpm`
+OBJECT_END
+
+OBJECT sudo_pkg
+    package_name VAR sudo_package
+    type `rpm`
+OBJECT_END
+
+OBJECT missing_pkg
+    package_name VAR fake_package
+    type `rpm`
+OBJECT_END
+
+STATE must_be_installed
+    installed boolean = true
+STATE_END
+
+STATE must_not_be_installed
+    installed boolean = false
+STATE_END
+
+CRI AND
+    CTN rpm_package
+        TEST all all
+        STATE_REF must_be_installed
+        OBJECT_REF openssl_pkg
+        OBJECT_REF sudo_pkg
+    CTN_END
+
+    CTN rpm_package
+        TEST all all
+        STATE_REF must_not_be_installed
+        OBJECT_REF missing_pkg
+    CTN_END
+CRI_END
+DEF_END

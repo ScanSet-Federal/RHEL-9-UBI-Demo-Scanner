@@ -1,0 +1,64 @@
+META
+    ics_scan_id `sysctl_parameter_test`
+    control_framework `RHEL_9_STIG`
+    control `SV-258100r925600_rule`
+    platform `RHEL_9`
+    criticality `high`
+    tags `kernel, networking, security`
+META_END
+DEF
+VAR ip_forward_param string `net.ipv4.ip_forward`
+VAR randomize_va_param string `kernel.randomize_va_space`
+VAR syncookies_param string `net.ipv4.tcp_syncookies`
+
+VAR disabled_value string `0`
+VAR enabled_value string `1`
+VAR aslr_value int 2
+
+OBJECT ip_forward
+    parameter_name VAR ip_forward_param
+    type `sysctl`
+OBJECT_END
+
+OBJECT va_randomize
+    parameter_name VAR randomize_va_param
+    type `sysctl`
+OBJECT_END
+
+OBJECT tcp_syncookies
+    parameter_name VAR syncookies_param
+    type `sysctl`
+OBJECT_END
+
+STATE must_be_disabled
+    value string = VAR disabled_value
+STATE_END
+
+STATE aslr_enabled
+    value_int int = VAR aslr_value
+STATE_END
+
+STATE must_be_enabled
+    value string = VAR enabled_value
+STATE_END
+
+CRI OR
+    CTN sysctl_parameter
+        TEST all all
+        STATE_REF must_be_disabled
+        OBJECT_REF ip_forward
+    CTN_END
+
+    CTN sysctl_parameter
+        TEST all all
+        STATE_REF aslr_enabled
+        OBJECT_REF va_randomize
+    CTN_END
+
+    CTN sysctl_parameter
+        TEST all all
+        STATE_REF must_be_enabled
+        OBJECT_REF tcp_syncookies
+    CTN_END
+CRI_END
+DEF_END

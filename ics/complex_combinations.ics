@@ -1,0 +1,68 @@
+META
+    ics_scan_id `complex_test_combinations`
+    control_framework `RHEL_9_STIG`
+    control `advanced_testing`
+    platform `RHEL_9`
+    criticality `high`
+    tags `complex, advanced, validation`
+META_END
+
+DEF
+VAR ip_forward string `net.ipv4.ip_forward`
+VAR icmp_redirect string `net.ipv4.conf.all.accept_redirects`
+VAR source_route string `net.ipv4.conf.all.accept_source_route`
+VAR syncookies string `net.ipv4.tcp_syncookies`
+
+VAR zero string `0`
+VAR one string `1`
+
+OBJECT forward_param
+    parameter_name VAR ip_forward
+OBJECT_END
+
+OBJECT redirect_param
+    parameter_name VAR icmp_redirect
+OBJECT_END
+
+OBJECT source_param
+    parameter_name VAR source_route
+OBJECT_END
+
+OBJECT syncookie_param
+    parameter_name VAR syncookies
+OBJECT_END
+
+STATE disabled
+    value string = VAR zero
+STATE_END
+
+STATE enabled
+    value string = VAR one
+STATE_END
+
+CRI AND
+    # Scenario 1: All security params must be disabled
+    CTN sysctl_parameter
+        TEST all all
+        STATE_REF disabled
+        OBJECT_REF forward_param
+        OBJECT_REF redirect_param
+        OBJECT_REF source_param
+    CTN_END
+
+    # Scenario 2: At least one protection must be enabled
+    CTN sysctl_parameter
+        TEST at_least_one all
+        STATE_REF enabled
+        OBJECT_REF syncookie_param
+    CTN_END
+
+    # Scenario 3: Check specific param, accept either state
+    CTN sysctl_parameter
+        TEST all at_least_one
+        STATE_REF disabled
+        STATE_REF enabled
+        OBJECT_REF forward_param
+    CTN_END
+CRI_END
+DEF_END

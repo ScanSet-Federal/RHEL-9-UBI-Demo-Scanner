@@ -1,0 +1,87 @@
+META
+    ics_scan_id `state_combination_testing`
+    control_framework `RHEL_9_STIG`
+    control `state_logic`
+    platform `RHEL_9`
+    criticality `medium`
+    tags `states, logic, combinations`
+META_END
+
+DEF
+VAR sshd string `sshd.service`
+VAR ip_forward string `net.ipv4.ip_forward`
+VAR sudoers string `/etc/sudoers`
+
+OBJECT sshd_service
+    service_name VAR sshd
+OBJECT_END
+
+OBJECT forward_param
+    parameter_name VAR ip_forward
+OBJECT_END
+
+OBJECT sudoers_file
+    path VAR sudoers
+OBJECT_END
+
+STATE svc_running
+    active boolean = true
+STATE_END
+
+STATE svc_enabled
+    enabled boolean = true
+STATE_END
+
+STATE svc_full_check
+    active boolean = true
+    enabled boolean = true
+STATE_END
+
+STATE param_disabled
+    value string = `0`
+STATE_END
+
+STATE file_secure
+    permissions string = `0440`
+    owner string = `0`
+    exists boolean = true
+STATE_END
+
+STATE file_readable
+    readable boolean = true
+    exists boolean = true
+STATE_END
+
+CRI AND
+    # TEST all any - Service must exist, pass any state
+    CTN systemd_service
+        TEST all at_least_one
+        STATE_REF svc_running
+        STATE_REF svc_enabled
+        STATE_REF svc_full_check
+        OBJECT_REF sshd_service
+    CTN_END
+
+    # TEST all at_least_one - Param exists, at least one state passes
+    CTN sysctl_parameter
+        TEST all at_least_one
+        STATE_REF param_disabled
+        OBJECT_REF forward_param
+    CTN_END
+
+    # TEST all all with multiple states (AND logic)
+    CTN file_metadata
+        TEST all all
+        STATE_REF file_secure
+        OBJECT_REF sudoers_file
+    CTN_END
+
+    # TEST all any with multiple states (OR logic)
+    CTN file_metadata
+        TEST all at_least_one
+        STATE_REF file_secure
+        STATE_REF file_readable
+        OBJECT_REF sudoers_file
+    CTN_END
+CRI_END
+DEF_END

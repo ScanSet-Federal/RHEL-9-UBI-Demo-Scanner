@@ -1,0 +1,101 @@
+META
+    ics_scan_id `rhel9_baseline_compliance`
+    control_framework `RHEL_9_STIG`
+    control `baseline_configuration`
+    platform `RHEL_9`
+    criticality `high`
+    tags `baseline, comprehensive, integration`
+META_END
+
+DEF
+# Variables
+VAR openssl_pkg string `openssl`
+VAR sshd_svc string `sshd.service`
+VAR ip_forward string `net.ipv4.ip_forward`
+VAR selinux_mode string `Enforcing`
+VAR sudoers_path string `/etc/sudoers`
+VAR disabled string `0`
+VAR required_perms string `0440`
+VAR root_user string `0`
+
+# Objects
+OBJECT openssl_package
+    package_name VAR openssl_pkg
+OBJECT_END
+
+OBJECT sshd_service
+    service_name VAR sshd_svc
+OBJECT_END
+
+OBJECT ip_forward_param
+    parameter_name VAR ip_forward
+OBJECT_END
+
+OBJECT selinux_check
+    check_type `enforcement`
+OBJECT_END
+
+OBJECT sudoers_file
+    path VAR sudoers_path
+    type `file`
+OBJECT_END
+
+# States
+STATE pkg_installed
+    installed boolean = true
+STATE_END
+
+STATE svc_active
+    active boolean = true
+    enabled boolean = true
+STATE_END
+
+STATE forwarding_disabled
+    value string = VAR disabled
+STATE_END
+
+STATE selinux_enforcing
+    mode string = VAR selinux_mode
+    enforcing boolean = true
+STATE_END
+
+STATE secure_permissions
+    permissions string = VAR required_perms
+    owner string = VAR root_user
+    group string = VAR root_user
+    exists boolean = true
+STATE_END
+
+# Criteria
+CRI AND
+    CTN rpm_package
+        TEST all all
+        STATE_REF pkg_installed
+        OBJECT_REF openssl_package
+    CTN_END
+
+    CTN systemd_service
+        TEST all all
+        STATE_REF svc_active
+        OBJECT_REF sshd_service
+    CTN_END
+
+    CTN sysctl_parameter
+        TEST all all
+        STATE_REF forwarding_disabled
+        OBJECT_REF ip_forward_param
+    CTN_END
+
+    CTN selinux_status
+        TEST all all
+        STATE_REF selinux_enforcing
+        OBJECT_REF selinux_check
+    CTN_END
+
+    CTN file_metadata
+        TEST all all
+        STATE_REF secure_permissions
+        OBJECT_REF sudoers_file
+    CTN_END
+CRI_END
+DEF_END

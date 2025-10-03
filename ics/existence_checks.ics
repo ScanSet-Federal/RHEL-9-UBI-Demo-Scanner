@@ -1,0 +1,83 @@
+META
+    ics_scan_id `existence_check_variations`
+    control_framework `TEST_SUITE`
+    control `existence_checks`
+    platform `RHEL_9`
+    criticality `medium`
+    tags `testing, existence`
+META_END
+
+DEF
+VAR pkg1 string `bash`
+VAR pkg2 string `coreutils`
+VAR pkg3 string `util-linux`
+VAR missing1 string `fake-package-1`
+VAR missing2 string `fake-package-2`
+
+OBJECT bash_pkg
+    package_name VAR pkg1
+OBJECT_END
+
+OBJECT coreutils_pkg
+    package_name VAR pkg2
+OBJECT_END
+
+OBJECT util_pkg
+    package_name VAR pkg3
+OBJECT_END
+
+OBJECT fake1
+    package_name VAR missing1
+OBJECT_END
+
+OBJECT fake2
+    package_name VAR missing2
+OBJECT_END
+
+STATE installed
+    installed boolean = true
+STATE_END
+
+CRI AND
+    # TEST all - All 3 packages must exist (should PASS)
+    CTN rpm_package
+        TEST all all
+        STATE_REF installed
+        OBJECT_REF bash_pkg
+        OBJECT_REF coreutils_pkg
+        OBJECT_REF util_pkg
+    CTN_END
+
+    # TEST any - At least one package exists (should PASS)
+    CTN rpm_package
+        TEST any all
+        STATE_REF installed
+        OBJECT_REF bash_pkg
+        OBJECT_REF fake1
+    CTN_END
+
+    # TEST at_least_one - Synonym for any (should PASS)
+    CTN rpm_package
+        TEST at_least_one all
+        STATE_REF installed
+        OBJECT_REF util_pkg
+        OBJECT_REF fake2
+    CTN_END
+
+    # TEST only_one - Exactly one exists (should PASS if only one real package)
+    CTN rpm_package
+        TEST only_one all
+        STATE_REF installed
+        OBJECT_REF bash_pkg
+        OBJECT_REF fake1
+    CTN_END
+
+    # TEST none - No packages should exist (should FAIL)
+    CTN rpm_package
+        TEST none all
+        STATE_REF installed
+        OBJECT_REF fake1
+        OBJECT_REF fake2
+    CTN_END
+CRI_END
+DEF_END

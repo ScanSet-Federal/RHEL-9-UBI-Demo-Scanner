@@ -1,0 +1,85 @@
+META
+    ics_scan_id `item_check_variations`
+    control_framework `TEST_SUITE`
+    control `item_checks`
+    platform `RHEL_9`
+    criticality `medium`
+    tags `testing, item_checks`
+META_END
+
+DEF
+VAR sshd string `sshd.service`
+VAR firewalld string `firewalld.service`
+VAR chronyd string `chronyd.service`
+VAR bluetooth string `bluetooth.service`
+
+OBJECT sshd_svc
+    service_name VAR sshd
+OBJECT_END
+
+OBJECT firewalld_svc
+    service_name VAR firewalld
+OBJECT_END
+
+OBJECT chronyd_svc
+    service_name VAR chronyd
+OBJECT_END
+
+OBJECT bluetooth_svc
+    service_name VAR bluetooth
+OBJECT_END
+
+STATE active_enabled
+    active boolean = true
+    enabled boolean = true
+STATE_END
+
+STATE inactive_disabled
+    active boolean = false
+    enabled boolean = false
+STATE_END
+
+
+CRI AND
+    # TEST all all - All services must pass state check
+    CTN systemd_service
+        TEST all all
+        STATE_REF active_enabled
+        OBJECT_REF sshd_svc
+        OBJECT_REF firewalld_svc
+    CTN_END
+
+    # TEST all any - All services exist, any state passes
+    CTN systemd_service
+        TEST all at_least_one
+        STATE_REF active_enabled
+        STATE_REF inactive_disabled
+        OBJECT_REF chronyd_svc
+    CTN_END
+
+    # TEST any all - At least one service passes state check
+    CTN systemd_service
+        TEST any all
+        STATE_REF active_enabled
+        OBJECT_REF sshd_svc
+        OBJECT_REF bluetooth_svc
+    CTN_END
+
+    # TEST at_least_one at_least_one - At least one service, at least one state
+    CTN systemd_service
+        TEST at_least_one at_least_one
+        STATE_REF active_enabled
+        STATE_REF inactive_disabled
+        OBJECT_REF sshd_svc
+        OBJECT_REF bluetooth_svc
+    CTN_END
+
+    # TEST only_one all - Exactly one service passes
+    CTN systemd_service
+        TEST only_one all
+        STATE_REF active_enabled
+        OBJECT_REF sshd_svc
+        OBJECT_REF bluetooth_svc
+    CTN_END
+CRI_END
+DEF_END

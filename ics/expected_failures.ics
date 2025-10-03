@@ -1,0 +1,63 @@
+META
+    ics_scan_id `negative_test_suite`
+    control_framework `TEST_SUITE`
+    control `expected_failures`
+    platform `RHEL_9`
+    criticality `low`
+    tags `testing, negative, validation`
+META_END
+
+DEF
+VAR nonexistent_pkg string `totally-fake-package-xyz`
+VAR nonexistent_svc string `fake-service.service`
+VAR invalid_param string `fake.kernel.parameter`
+
+OBJECT fake_package
+    package_name VAR nonexistent_pkg
+OBJECT_END
+
+OBJECT fake_service
+    service_name VAR nonexistent_svc
+OBJECT_END
+
+OBJECT fake_param
+    parameter_name VAR invalid_param
+OBJECT_END
+
+STATE should_exist
+    installed boolean = true
+STATE_END
+
+STATE should_be_active
+    active boolean = true
+STATE_END
+
+STATE should_have_value
+    value string = `1`
+STATE_END
+
+CRI AND
+    # These should all FAIL - testing error handling
+    
+    # TEST all with missing package
+    CTN rpm_package
+        TEST all all
+        STATE_REF should_exist
+        OBJECT_REF fake_package
+    CTN_END
+
+    # TEST none should PASS (nothing exists)
+    CTN rpm_package
+        TEST none all
+        STATE_REF should_exist
+        OBJECT_REF fake_package
+    CTN_END
+
+    # TEST all with nonexistent service
+    CTN systemd_service
+        TEST all all
+        STATE_REF should_be_active
+        OBJECT_REF fake_service
+    CTN_END
+CRI_END
+DEF_END
